@@ -30,8 +30,7 @@ var part1 = function() {
         }
       }
     })
-    console.log(invalidIds)
-
+    // console.log(invalidIds)
 
     const result = invalidIds.reduce((acc, val) => acc + val, 0)
     // console.log(result)
@@ -45,10 +44,39 @@ var part1 = function() {
 var part2 = function () {
 
   for (let i = 0; i < input.length; i++) {
-    const numberStrings = input[i].split(/\s+/)
-    const numbers = numberStrings.map((val => {return Number(val)}))
+    const idRanges = input[i].split(/\,/)
+    const ranges = idRanges.map((val => {
+      const parts = val.split('-')
+      return {
+        from: Number(parts[0]),
+        to: Number(parts[1])
+      }
+    }))
 
-    const result = 0
+    const invalidIds = new Set()
+    ranges.forEach(r => {
+      for (let id = r.from; id <= r.to; id++) {
+        const idStr = id.toString()
+        const strlen = idStr.length
+        for (let divisor = 2; divisor <= strlen; divisor++) {
+          const parts = []
+          const step = strlen / divisor
+          let idx = 0
+          while (idx < strlen) {
+            parts.push(idStr.substring(idx, idx + step))
+            idx += step
+          }
+          const allEqual = parts.every(v => v === parts[0])
+          if (allEqual) {
+            invalidIds.add(id)
+          }
+        }
+      }
+    })
+    const arrInvalidIds = Array.from(invalidIds)
+    // console.log(arrInvalidIds)
+
+    const result = arrInvalidIds.reduce((acc, val) => acc + val, 0)
     // console.log(result)
     $('#part2').append(input[i])
       .append('<br>&emsp;')
