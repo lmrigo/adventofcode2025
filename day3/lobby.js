@@ -52,10 +52,41 @@ var part1 = function() {
 var part2 = function () {
 
   for (let i = 0; i < input.length; i++) {
-    const numberStrings = input[i].split(/\s+/)
-    const numbers = numberStrings.map((val => {return Number(val)}))
+    const bankStrings = input[i].split(/\s+/)
+    const banks = bankStrings.map((val => {
+      return val.split('').map(Number)
+    }))
 
-    const result = 0
+    let totalJoltage = 0
+    banks.forEach(bank => {
+      let highestJoltage
+      let digit = 12
+      const digits = [] // length = 12
+      let prevDigitIndex = -1
+      while (digit > 0) {
+        // find nth digit
+        let nthDigit = 0
+        let nthDigitIndex = 0
+        for (let i = prevDigitIndex+1; i < bank.length-(digit-1); i++) {
+          if (bank[i] > nthDigit) {
+            nthDigit = bank[i]
+            nthDigitIndex = i
+          }
+          if (nthDigit === 9) {
+            break
+          }
+        }
+        digits.push(nthDigit)
+        prevDigitIndex = nthDigitIndex
+        digit--
+      }
+
+      highestJoltage = digits.join('')
+      // console.log('highestJoltage', highestJoltage)
+      totalJoltage += Number(highestJoltage)
+    });
+
+    const result = totalJoltage
     // console.log(result)
     $('#part2').append(input[i])
       .append('<br>&emsp;')
