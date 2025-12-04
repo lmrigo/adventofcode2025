@@ -33,6 +33,7 @@ var part1 = function() {
     }
 
     // 2542 too high
+    // 1486 correct
     const result = acessibleCount
     // console.log(result)
     $('#part1').append(input[i])
@@ -79,10 +80,35 @@ const printGrid = function() {
 var part2 = function () {
 
   for (let i = 0; i < input.length; i++) {
-    const numberStrings = input[i].split(/\s+/)
-    const numbers = numberStrings.map((val => {return Number(val)}))
+    grid = []
+    const rowStrings = input[i].split(/\s+/)
+    grid = rowStrings.map((val => {
+      return val.split('')
+    }))
 
-    const result = 0
+    let prevRemovedCount = -1
+    let removedCount = 0
+
+    while (removedCount !== prevRemovedCount) {
+      prevRemovedCount = removedCount
+
+      const acessibleRolls = []
+      for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[0].length; x++) {
+          if (grid[y][x] === '@') {
+            if (accessible(x,y)) {
+              acessibleRolls.push({x:x, y:y})
+            }
+          }
+        }
+      }
+      for (const roll of acessibleRolls) {
+        grid[roll.y][roll.x] = 'x'
+      }
+      removedCount += acessibleRolls.length
+      // printGrid()
+    }
+    const result = removedCount
     // console.log(result)
     $('#part2').append(input[i])
       .append('<br>&emsp;')
