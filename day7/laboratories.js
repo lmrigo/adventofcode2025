@@ -74,14 +74,6 @@ var part2 = function () {
   for (let i = 0; i < input.length; i++) {
     const rows = input[i].split(/\n/)
     let grid = rows.map((val => val.split('')))
-    const splitsPerLine = []
-    rows.forEach((val => {
-      const splits = val.match(/\^/g)?.length
-      if (splits) {
-        splitsPerLine.push(splits)
-      }
-    }))
-    // console.log(splitsPerLine)
 
     const start = {y: 0, x: grid[0].indexOf('S')}
     grid[start.y][start.x] = '.'
