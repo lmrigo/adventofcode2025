@@ -104,10 +104,76 @@ var part1 = function() {
 var part2 = function () {
 
   for (let i = 0; i < input.length; i++) {
-    const numberStrings = input[i].split(/\s+/)
-    const numbers = numberStrings.map((val => {return Number(val)}))
+    const numberStrings = input[i].split(/\n/)
+    const junctions = numberStrings.map((row => {
+      const vals = row.split(',').map(val => Number(val))
+      return {x: vals[0], y: vals[1], z: vals[2]}
+    }))
+    // console.log(junctions)
+    const allDistances = []
+    for (let ji = 0; ji < junctions.length; ji++) {
+      const a = junctions[ji]
+      a.id = ji
+      a.cidx = -1
+      a.closestDist ??= Infinity
+      a.closestJunction ??= -1
+      for (let jj = ji + 1; jj < junctions.length; jj++) {
+        const b = junctions[jj]
+        const dist = Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2))
+        allDistances.push({from: ji, to: jj, dist: dist})
+        if (dist < a.closestDist) {
+          a.closestDist = dist
+          a.closestJunction = jj
+          if (b.closestDist === undefined || dist < b.closestDist) {
+            b.closestDist = dist
+            b.closestJunction = ji
+          }
+        }
+      }
+    }
+    // console.log(junctions)
+    allDistances.sort((a, b) => a.dist - b.dist)
+    // console.log('allDistances', allDistances)
 
-    const result = 0
+    const cluster = []
+    let totalClusterLength = 0
+    let lastIdx = -1
+    $(allDistances).each((didx, d) => { //regular forEach doesn't have break
+      const jFrom = junctions[d.from]
+      const jTo = junctions[d.to]
+
+      if (jFrom.cidx < 0 && jTo.cidx < 0) { // new circuit
+        const circuit = [jFrom, jTo]
+        const len = cluster.push(circuit)
+        jFrom.cidx = len - 1
+        jTo.cidx = len - 1
+        totalClusterLength += 2
+      } else if (jFrom.cidx >= 0 && jTo.cidx < 0) {
+        cluster[jFrom.cidx].push(jTo)
+        jTo.cidx = jFrom.cidx
+        totalClusterLength++
+      } else if (jFrom.cidx < 0 && jTo.cidx >= 0) {
+        cluster[jTo.cidx].push(jFrom)
+        jFrom.cidx = jTo.cidx
+        totalClusterLength++
+      } else { // both exist separately, merge
+        if (jFrom.cidx !== jTo.cidx) {
+          cluster[jFrom.cidx].push(...cluster[jTo.cidx]) // merge
+          cluster[jTo.cidx] = [] // remove old
+          cluster[jFrom.cidx].forEach(j => { // update index
+            j.cidx = jFrom.cidx
+          })
+        }
+      }
+      if (totalClusterLength === junctions.length) { // part 2
+        lastIdx = didx
+        return false
+      }
+    })
+    const lastCon = allDistances[lastIdx]
+    // console.log(allDistances)
+    // console.log('last connection', lastIdx, lastCon, junctions[lastCon.from], junctions[lastCon.to])
+    const result = junctions[lastCon.from].x * junctions[lastCon.to].x
     // console.log(result)
     $('#part2').append(input[i])
       .append('<br>&emsp;')
@@ -123,26 +189,3 @@ $(function (){
   part2()
   $('#main').append('<br>')
 })
-
-/*
-    let sortedJunctions = junctions.slice().sort((a, b) => a.closestDist - b.closestDist)
-    console.log('sorted', sortedJunctions)
-
-    const cluster = []
-    let part1Counter = junctions.length/2
-    while (sortedJunctions.length > 0 && part1Counter-- > 0) {
-      const j = sortedJunctions[0]
-      const jCircuit = cluster.find(circuit => {
-        return circuit.some(cj => cj.id === j.closestJunction)
-      })
-      if (jCircuit) {
-        jCircuit.push(j)
-        sortedJunctions = sortedJunctions.filter(jun => jun.id !== j.id)
-      } else {
-        const circuit = [j, junctions[j.closestJunction]]
-        cluster.push(circuit)
-        sortedJunctions = sortedJunctions.filter(jun => jun.id !== j.id)
-      }
-    }
-    console.log('clusters', cluster)
-    */
