@@ -155,70 +155,85 @@ var part2 = function () {
       minMaxYperColX[x].max = Math.max(minMaxYperColX[x].max, y)
     }))
 
-    // this only works with convex shapes
-    minMaxYperColX.forEach((val1, x) => {
-      minMaxXperRowY.forEach((val2, y) => {
-        if (y < val1.min || y > val1.max) { return } // only within the vertical range
-        if (x < val2.min ) { val2.min = x }
-        if (x > val2.max ) { val2.max = x }
-      })
-    })
-    minMaxXperRowY.forEach((val1, y) => {
-      minMaxYperColX.forEach((val2, x) => {
-        if (x < val1.min || x > val1.max) { return } // only within the horizontal range
-        if (y < val2.min ) { val2.min = y }
-        if (y > val2.max ) { val2.max = y }
-      })
+    // create polygon grid
+
+    // init grid
+    grid = []
+    let minY = minMaxYperColX.reduce((acc, val) => Math.min(acc, val.min), Infinity)
+    let maxY = minMaxYperColX.reduce((acc, val) => Math.max(acc, val.max), 0)
+    let minX = minMaxXperRowY.reduce((acc, val) => Math.min(acc, val.min), Infinity)
+    let maxX = minMaxXperRowY.reduce((acc, val) => Math.max(acc, val.max), 0)
+    for (let y = minY; y <= maxY; y++) {
+      if (!grid[y]) { grid[y] = [] }
+      for (let x = minX; x <= maxX; x++) {
+        grid[y][x] = '.'
+      }
+    }
+    // fill red tiles
+    redTiles.forEach(tile => {
+      let tileY = tile.y
+      let tileX = tile.x
+      if (!grid[tileY]) { grid[tileY] = [] }
+      grid[tileY][tileX] = '#'
     })
 
-    // console.log(minMaxXperRowY, minMaxYperColX, redTiles)
-
-    // uncomment to print filled grid
-    // grid = []
-    // const isPuzzle = (i === 1)
-    // const scale = 1
-    // let minY = 0, maxY = 8, minX = 0, maxX = 16
-    // if (isPuzzle) {
-    //   minY = minMaxYperColX.reduce((acc, val) => Math.min(acc, val.min), Infinity)
-    //   minY = Math.floor(minY / scale)
-    //   maxY = minMaxYperColX.reduce((acc, val) => Math.max(acc, val.max), 0)
-    //   maxY = Math.floor(maxY / scale)
-    //   minX = minMaxXperRowY.reduce((acc, val) => Math.min(acc, val.min), Infinity)
-    //   minX = Math.floor(minX / scale)
-    //   maxX = minMaxXperRowY.reduce((acc, val) => Math.max(acc, val.max), 0)
-    //   maxX = Math.floor(maxX / scale)
-    // }
-    // for (let y = minY; y <= maxY; y++) {
-    //   if (!grid[y]) { grid[y] = [] }
-    //   for (let x = 0; x <= maxX; x++) {
-    //     grid[y][x] = '.'
-    //   }
-    // }
-    // minMaxYperColX.forEach((val, x) => {
-    //   let minY = isPuzzle ? Math.floor(val.min / scale) : val.min
-    //   let maxY = isPuzzle ? Math.floor(val.max / scale) : val.max
-    //   let colX = isPuzzle ? Math.floor(x / scale) : x
-    //   for (let y = minY; y <= maxY; y++) {
-    //     grid[y][colX] = 'X'
-    //   }
-    // })
-    // minMaxXperRowY.forEach((val, y) => {
-    //   let minX = isPuzzle ? Math.floor(val.min / scale) : val.min
-    //   let maxX = isPuzzle ? Math.floor(val.max / scale) : val.max
-    //   let rowY = isPuzzle ? Math.floor(y / scale) : y
-    //   for (let x = minX; x <= maxX; x++) {
-    //     grid[rowY][x] = 'X'
-    //   }
-    // })
-    // redTiles.forEach(tile => {
-    //   let tileY = isPuzzle ? Math.floor(tile.y / scale) : tile.y
-    //   let tileX = isPuzzle ? Math.floor(tile.x / scale) : tile.x
-    //   if (!grid[tileY]) { grid[tileY] = [] }
-    //   grid[tileY][tileX] = '#'
-    // })
+    // fill the shape edge by edge
+    for (let t = 0; t < redTiles.length; t++) {
+      const tile = redTiles[t]
+      const nextTile = redTiles[(t+1) % redTiles.length]
+      if (tile.x === nextTile.x) {
+        const minY = Math.min(tile.y, nextTile.y)
+        const maxY = Math.max(tile.y, nextTile.y)
+        for (let y = minY+1; y <= maxY-1; y++) {
+          grid[y][tile.x] = 'X'
+        }
+      } else if (tile.y === nextTile.y) {
+        const minX = Math.min(tile.x, nextTile.x)
+        const maxX = Math.max(tile.x, nextTile.x)
+        for (let x = minX+1; x <= maxX-1; x++) {
+          grid[tile.y][x] = 'X'
+        }
+      } else {
+        console.log ('should not happen')
+      }
+    }
     // printGrid()
-    // continue
 
+    // fill grid
+    // start from somewhere inside and spread
+    // this works only for the current input
+    const initialState = {x: Math.floor(grid[0].length/2), y: Math.floor(grid.length/2)}
+    if (i === 0) initialState.y--
+    // if a generic code is needed, here there would be a logic to look for a point inside the shape
+    // while (grid[initialState.y][initialState.x] !== '.') {
+    //   initialState.x++
+    //   initialState.y++
+    // }
+    // console.log('starting fill at', initialState)
+
+    const states = [initialState]
+    while (states.length > 0) {
+      const st = states.shift()
+      if (grid[st.y][st.x] === '.' ) {
+        grid[st.y][st.x] = 'X'
+        // genNextStates
+        const newStates = []
+        if (grid[st.y][st.x-1] === '.') { // left
+          newStates.push({x: st.x-1, y: st.y})
+        }
+        if (grid[st.y][st.x+1] === '.') { // right
+          newStates.push({x: st.x+1, y: st.y})
+        }
+        if (grid[st.y-1][st.x] === '.') { // up
+          newStates.push({x: st.x, y: st.y-1})
+        }
+        if (grid[st.y+1][st.x] === '.') { // down
+          newStates.push({x: st.x, y: st.y+1})
+        }
+        states.push(...newStates)
+      }
+    }
+    // printGrid()
 
     const validAreas = []
     let maxArea = 0
@@ -232,34 +247,51 @@ var part2 = function () {
         const d = {x: b.x, y: a.y}
         let cValid = false
         let dValid = false
-        if (minMaxYperColX[c.x] && minMaxXperRowY[c.y]) {
-          if (c.x >= minMaxXperRowY[c.y].min && c.x <= minMaxXperRowY[c.y].max
-            && c.y >= minMaxYperColX[c.x].min && c.y <= minMaxYperColX[c.x].max) {
+        if (grid[c.y] && grid[c.y][c.x] === 'X'
+          || grid[c.y] && grid[c.y][c.x] === '#' ) {
             cValid = true
-          } else {
-            cValid = false
-          }
-        } else { // should not happen
-          console.log('no row/column for c', c)
+        } else {
+          return // skip invalid c
         }
-        if (minMaxYperColX[d.x] && minMaxXperRowY[d.y]) {
-          if (d.x >= minMaxXperRowY[d.y].min && d.x <= minMaxXperRowY[d.y].max
-            && d.y >= minMaxYperColX[d.x].min && d.y <= minMaxYperColX[d.x].max) {
+        if (grid[d.y] && grid[d.y][d.x] === 'X'
+          || grid[d.y] && grid[d.y][d.x] === '#' ) {
             dValid = true
-          } else {
-            dValid = false
-          }
-        } else { // should not happen
-          console.log('no row/column for d', d)
+        } else {
+          return // skip invalid d
         }
-        // console.log(cValid, dValid, a, b, c, d)
 
-        if (cValid && dValid) {
-          let area = calcArea(a, b)
-          validAreas.push({from: a, to: b, area: area})
-          if (area > maxArea) {
-            // console.log(`new max area ${area} from (${a.x},${a.y}) to (${b.x},${b.y})`)
-            maxArea = area
+        if (cValid && dValid) { // if corners are valid
+          let validEdges = true
+          // Check vertical edges
+          for (let y = Math.min(a.y, b.y); y <= Math.max(a.y, b.y); y++) {
+            if (grid[y][a.x] !== 'X' && grid[y][a.x] !== '#') {
+              validEdges = false
+              break
+            }
+            if (grid[y][b.x] !== 'X' && grid[y][b.x] !== '#') {
+              validEdges = false
+              break
+            }
+          }
+          if (validEdges) {
+            // Check horizontal edges
+            for (let x = Math.min(a.x, b.x); x <= Math.max(a.x, b.x); x++) {
+              if (grid[a.y][x] !== 'X' && grid[a.y][x] !== '#') {
+                validEdges = false
+                break
+              }
+              if (grid[b.y][x] !== 'X' && grid[b.y][x] !== '#') {
+                validEdges = false
+                break
+              }
+            }
+
+            let area = calcArea(a, b)
+            validAreas.push({from: a, to: b, area: area})
+            if (area > maxArea) {
+              // console.log(`new max area ${area} from (${a.x},${a.y}) to (${b.x},${b.y})`)
+              maxArea = area
+            }
           }
         }
       })
@@ -310,7 +342,7 @@ function calcArea(a, b) {
 
 $(function (){
   $('#main').append('<div id="part1"><h2>part 1</h2></div>')
-  // part1()
+  part1()
   $('#main').append('<br><div id="part2"><h2>part 2</h2></div>')
   part2()
   $('#main').append('<br>')
