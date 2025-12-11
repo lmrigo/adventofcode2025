@@ -94,10 +94,76 @@ var part1 = function() {
 var part2 = function () {
 
   for (let i = 0; i < input.length; i++) {
-    const numberStrings = input[i].split(/\s+/)
-    const numbers = numberStrings.map((val => {return Number(val)}))
+    const machineStrings = input[i].split(/\n/)
+    const machines = machineStrings.map((val => {
+      const parts = val.split(/\s+/)
+      const machine = {}
 
-    const result = 0
+      const targetLights = parts[0].split('')
+      machine.targetLights = targetLights
+        .slice(1, targetLights.length - 1) // remove [ ]
+        .map((v) => v === '#' ? true : false)
+      machine.lights = machine.targetLights.map((v) => false)
+
+      const buttons = []
+      for (let p = 1; p < parts.length - 1; p++) {
+        const buttonSplit = parts[p].split(/\,|\(|\)/)
+        const button = buttonSplit
+          .slice(1, buttonSplit.length - 1) // remove ( )
+          .map((v) => Number(v))
+        buttons.push(button)
+      }
+      machine.buttons = buttons
+
+      const joltage = parts[parts.length - 1].split(/\,|\{|\}/)
+      machine.targetJoltage = joltage
+        .slice(1, joltage.length - 1) // remove { }
+        .map((v) => Number(v))
+      machine.joltage = machine.targetJoltage.map(() => 0)
+
+      return machine
+    }))
+    // console.log('machines', machines)
+    const fewestButtonPresses = []
+
+    // wip. Works but is incredibly inneficient.
+    machines.forEach((machine) => {
+      // console.log('looking for solution: ', machine)
+
+      // order doesn't matter
+      let minPresses = Infinity
+      const initialState = {presses: 0, joltage: machine.joltage.slice(), pressed: []}
+      const states = [initialState]
+      while (states.length > 0) {
+        const st = states.pop()
+        if (st.presses >= minPresses) {
+          continue
+        }
+        const newStates = []
+        machine.buttons.forEach((button, index) => {
+          const newSt = { presses: st.presses + 1, joltage: st.joltage.slice(), pressed: st.pressed.slice() }
+          newSt.pressed.push(index)
+          button.forEach((joltageIndex) => {
+            newSt.joltage[joltageIndex]++
+          })
+          if (newSt.joltage.some((val, idx) => val > machine.targetJoltage[idx])) {
+            return
+          } else if (newSt.joltage.every((val, idx) => val === machine.targetJoltage[idx])) {
+            if (newSt.presses < minPresses) {
+              minPresses = newSt.presses
+              // console.log(newSt)
+            }
+          } else if (newSt.presses < minPresses) {
+            newStates.push(newSt)
+          }
+        })
+        states.push(...newStates)
+      }
+      fewestButtonPresses.push(minPresses)
+      // console.log('minPresses', minPresses)
+    })
+
+    const result = fewestButtonPresses.reduce((a, b) => a + b, 0)
     // console.log(result)
     $('#part2').append(input[i])
       .append('<br>&emsp;')
