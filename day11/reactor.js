@@ -52,12 +52,68 @@ var part1 = function() {
 }
 
 var part2 = function () {
+  input[0] = `svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
+ggg: out
+hhh: out`;
 
   for (let i = 0; i < input.length; i++) {
-    const numberStrings = input[i].split(/\s+/)
-    const numbers = numberStrings.map((val => {return Number(val)}))
+    const deviceStrings = input[i].split(/\n/)
+    const devices = {}
+    deviceStrings.forEach((val => {
+      const splitted = val.split(': ')
+      const src = splitted[0]
+      devices[src] = {}
+      const dests = splitted[1].split(/\s+/)
+      dests.forEach((dest) => {
+        devices[src][dest] = true
+      })
+    }))
+    // console.log(devices)
 
-    const result = 0
+    // wip. Works but is incredibly inneficient.
+    const initialState = {d:'svr', dac:false, fft:false , history: new Set(['svr'])}
+    let pathCount = 0
+    const states = [initialState]
+    while (states.length > 0) {
+      const st = states.shift()
+      if (st.d === 'dac') {
+        st.dac = true
+      }
+      if (st.d === 'fft') {
+        st.fft = true
+      }
+      if (st.d === 'out') {
+        if (st.dac && st.fft) {
+          pathCount++
+        }
+        continue
+      } else {
+        const newStates = []
+        Object.keys(devices[st.d]).forEach(d => {
+          if (!st.history.has(d)) {
+            newStates.push({
+              d: d,
+              dac: st.dac,
+              fft: st.fft,
+              history: new Set(st.history).add(d)
+            })
+          }
+        })
+        states.push(...newStates)
+      }
+    }
+
+    const result = pathCount
     // console.log(result)
     $('#part2').append(input[i])
       .append('<br>&emsp;')
